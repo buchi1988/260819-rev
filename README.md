@@ -33,7 +33,7 @@ PowerShell から直接叩く場合:
 .\build.ps1 -Admin   # 管理者権限を要求する版
 ```
 
-生成される exe は **単一ファイル・インストール不要**（約 10 MB）で、Python が入っていない
+生成される exe は **単一ファイル・インストール不要**（約 11 MB）で、Python が入っていない
 別の PC にコピーしてもそのまま動きます。
 
 ### B. GitHub Actions のビルド成果物を使う
@@ -41,7 +41,11 @@ PowerShell から直接叩く場合:
 このリポジトリに push すると、`Windows exe をビルド` ワークフローが windows-latest 上で
 テスト → ビルド → 起動確認まで行い、`ProcCpuMonitor-exe` という成果物（通常版・管理者版の
 両方の exe）を添付します。GitHub の **Actions** タブ → 該当の実行 → **Artifacts** から
-ダウンロードできます。
+ダウンロードできます（成果物の保持期間は 90 日）。
+
+ワークフローは windows-latest 上で
+`python -m pytest`（GUI を実際に生成するスモークテストを含む）→ PyInstaller ビルド →
+生成した exe を起動して 8 秒後も動作しているかの確認、まで自動で行います。
 
 ---
 
