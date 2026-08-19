@@ -6,6 +6,9 @@
     Python 3.9 以降が必要です（https://www.python.org/downloads/windows/ ）。
     PyInstaller が未インストールなら自動で導入します。
 
+.PARAMETER PythonExe
+    使用する Python の実行ファイルを明示的に指定します（省略時は自動検出）。
+
 .PARAMETER Admin
     起動時に管理者権限を要求する exe (ProcCpuMonitor-Admin.exe) を作ります。
     サービスや別ユーザーとして動くプロセス（EdmServerV6.exe など）の
@@ -18,34 +21,36 @@
 [CmdletBinding()]
 param(
     [switch]$Admin,
-    [switch]$SkipInstall
+    [switch]$SkipInstall,
+    [string]$PythonExe
 )
 
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 
 # --- Python を探す -----------------------------------------------------
-$pythonExe = $null
 $pythonPrefix = @()
-foreach ($candidate in @(@("py", "-3"), @("python"), @("python3"))) {
-    if (Get-Command $candidate[0] -ErrorAction SilentlyContinue) {
-        $pythonExe = $candidate[0]
-        $pythonPrefix = @($candidate | Select-Object -Skip 1)
-        break
+if (-not $PythonExe) {
+    foreach ($candidate in @(@("py", "-3"), @("python"), @("python3"))) {
+        if (Get-Command $candidate[0] -ErrorAction SilentlyContinue) {
+            $PythonExe = $candidate[0]
+            $pythonPrefix = @($candidate | Select-Object -Skip 1)
+            break
+        }
     }
 }
-if (-not $pythonExe) {
+if (-not $PythonExe) {
     throw "Python が見つかりません。https://www.python.org/downloads/windows/ からインストールし、[Add python.exe to PATH] を有効にしてください。"
 }
 
-Write-Host "使用する Python: $pythonExe $pythonPrefix" -ForegroundColor Cyan
-& $pythonExe @($pythonPrefix + @("--version"))
+Write-Host "使用する Python: $PythonExe $pythonPrefix" -ForegroundColor Cyan
+& $PythonExe @($pythonPrefix + @("--version"))
 if ($LASTEXITCODE -ne 0) { throw "Python の実行に失敗しました。" }
 
 # --- PyInstaller ------------------------------------------------------
 if (-not $SkipInstall) {
     Write-Host "PyInstaller を確認しています..." -ForegroundColor Cyan
-    & $pythonExe @($pythonPrefix + @("-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "pyinstaller"))
+    & $PythonExe @($pythonPrefix + @("-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "pyinstaller"))
     if ($LASTEXITCODE -ne 0) { throw "PyInstaller のインストールに失敗しました。" }
 }
 
@@ -67,7 +72,7 @@ $pyArgs = @(
 if ($Admin) { $pyArgs += "--uac-admin" }
 
 Write-Host "ビルド中..." -ForegroundColor Cyan
-& $pythonExe @($pythonPrefix + $pyArgs)
+& $PythonExe @($pythonPrefix + $pyArgs)
 if ($LASTEXITCODE -ne 0) { throw "ビルドに失敗しました。" }
 
 $output = Join-Path $PSScriptRoot "dist\$name.exe"

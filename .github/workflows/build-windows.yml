@@ -22,10 +22,10 @@ jobs:
         run: python -m pytest tests -q
 
       - name: 通常版 exe をビルド
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -SkipInstall
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -SkipInstall -PythonExe python
 
       - name: 管理者権限版 exe をビルド
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Admin -SkipInstall
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Admin -SkipInstall -PythonExe python
 
       - name: 起動確認（3 秒で自動終了）
         run: |

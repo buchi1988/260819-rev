@@ -88,3 +88,37 @@ def test_config_rejects_empty_process_list(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
     config.save({"processes": []})
     assert config.load()["processes"] == config.DEFAULT_PROCESSES
+
+
+@pytest.mark.parametrize("window,expected_step", [
+    (60, 10), (120, 20), (300, 60), (600, 120), (1800, 300),
+])
+def test_time_step(window, expected_step):
+    from proc_cpu_monitor.plotmath import time_step
+
+    assert time_step(window) == expected_step
+
+
+@pytest.mark.parametrize("seconds,expected", [
+    (0, "現在"), (10, "-10s"), (59, "-59s"),
+    (60, "-1分"), (300, "-5分"), (90, "-1分30s"), (1800, "-30分"),
+])
+def test_format_age(seconds, expected):
+    from proc_cpu_monitor.plotmath import format_age
+
+    assert format_age(seconds) == expected
+
+
+def test_x_axis_labels_fit_in_window():
+    """目盛りが表示期間を超えず、末尾がちょうど窓の端に来ること."""
+    from proc_cpu_monitor.plotmath import time_step
+
+    for window in (60, 120, 300, 600, 1800):
+        step = time_step(window)
+        ticks = []
+        age = 0.0
+        while age <= window + 0.001:
+            ticks.append(age)
+            age += step
+        assert ticks[-1] == pytest.approx(window)
+        assert 5 <= len(ticks) <= 9

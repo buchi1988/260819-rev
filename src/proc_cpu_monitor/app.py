@@ -167,7 +167,8 @@ class MonitorApp:
         body.pack(side="top", fill="both", expand=True,
                   padx=self._px(8), pady=(0, self._px(4)))
 
-        self.chart = TimeSeriesChart(body, window_seconds=self.settings["window_seconds"])
+        self.chart = TimeSeriesChart(body, window_seconds=self.settings["window_seconds"],
+                                     ui_scale=self.scale)
         self.chart.PAD_LEFT = self._px(TimeSeriesChart.PAD_LEFT)
         self.chart.PAD_RIGHT = self._px(TimeSeriesChart.PAD_RIGHT)
         self.chart.PAD_TOP = self._px(TimeSeriesChart.PAD_TOP)

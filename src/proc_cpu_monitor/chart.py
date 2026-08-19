@@ -17,8 +17,10 @@ from .plotmath import (
     GRID_STRONG,
     PLOT_BG,
     SERIES_COLORS,
+    format_age,
     format_percent,
     nice_ceiling,
+    time_step,
 )
 
 
@@ -30,9 +32,11 @@ class TimeSeriesChart(tk.Canvas):
     PAD_TOP = 14
     PAD_BOTTOM = 30
 
-    def __init__(self, master, window_seconds: float = 120.0, **kwargs):
+    def __init__(self, master, window_seconds: float = 120.0, ui_scale: float = 1.0,
+                 **kwargs):
         super().__init__(master, background=BG, highlightthickness=0, **kwargs)
         self.window_seconds = window_seconds
+        self.ui_scale = ui_scale
         self.y_mode = "auto"          # "auto" | "fixed"
         self.y_fixed_max = 100.0
         self.y_unit = "%"
@@ -181,7 +185,9 @@ class TimeSeriesChart(tk.Canvas):
                 self.create_line(*coords, fill=color, width=2,
                                  joinstyle="round", capstyle="round", smooth=False)
             last_x, last_y = to_xy(now, series[-1])
-            self.create_oval(last_x - 3, last_y - 3, last_x + 3, last_y + 3,
+            radius = 3 * self.ui_scale
+            self.create_oval(last_x - radius, last_y - radius,
+                             last_x + radius, last_y + radius,
                              fill=color, outline=BG)
 
     def _draw_y_axis(self, left, right, top, bottom, y_max):
@@ -191,17 +197,22 @@ class TimeSeriesChart(tk.Canvas):
             y = bottom - (bottom - top) * i / divisions
             if i:
                 self.create_line(left + 1, y, right - 1, y, fill=GRID)
-            self.create_text(left - 8, y, text=f"{format_percent(value)}{self.y_unit}",
+            self.create_text(left - 8 * self.ui_scale, y,
+                             text=f"{format_percent(value)}{self.y_unit}",
                              anchor="e", fill=FG_DIM, font=("Consolas", 9))
 
     def _draw_x_axis(self, left, right, top, bottom):
-        divisions = 6
         window = self.window_seconds
-        for i in range(divisions + 1):
-            x = left + (right - left) * i / divisions
-            seconds_ago = window * (1 - i / divisions)
-            if 0 < i < divisions:
+        step = time_step(window)
+        span = right - left
+        label_y = bottom + self.PAD_BOTTOM * 0.45
+        age = 0.0
+        while age <= window + 0.001:
+            x = right - age / window * span
+            if x <= left + 1:
+                break
+            if age > 0:
                 self.create_line(x, top + 1, x, bottom - 1, fill=GRID)
-            label = "現在" if seconds_ago < 0.5 else f"-{seconds_ago:.0f}s"
-            self.create_text(x, bottom + 14, text=label, fill=FG_DIM,
+            self.create_text(x, label_y, text=format_age(age), fill=FG_DIM,
                              font=("Consolas", 9))
+            age += step
