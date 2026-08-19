@@ -249,16 +249,18 @@ class MonitorApp:
                                  font=("Consolas", 16), anchor="w")
             value_lbl.pack(fill="x", padx=self._px(8))
             detail_lbl = tk.Label(row, text="", background=PLOT_BG, foreground=FG_DIM,
-                                  font=MONO_FONT, anchor="w", justify="left")
+                                  font=MONO_FONT, anchor="w", justify="left",
+                                  wraplength=self._px(228))
             detail_lbl.pack(fill="x", padx=self._px(8), pady=(0, self._px(6)))
 
             self._legend_rows[name] = (value_lbl, detail_lbl, var)
 
-        note = ("表示値は パフォーマンスモニター の\n"
-                "Process \\ % Processor Time と同じ定義です\n"
-                f"（最大 {self.cpu_count * 100}% ／ コア数で割らない）")
+        note = ("表示値はパフォーマンスモニターの "
+                "Process \\ % Processor Time と同じ定義です"
+                f"（コア数で割らない場合の最大は {self.cpu_count * 100}%）。")
         tk.Label(self.legend, text=note, background=BG, foreground=FG_DIM,
-                 font=("Yu Gothic UI", 8), anchor="w", justify="left").pack(
+                 font=("Yu Gothic UI", 8), anchor="w", justify="left",
+                 wraplength=self._px(238)).pack(
             fill="x", side="bottom", pady=self._px(6))
 
     # ------------------------------------------------------------- 計測
@@ -302,7 +304,7 @@ class MonitorApp:
         self._write_csv(samples)
 
     def _update_legend(self, samples, plotted):
-        unit = "%" if not self.var_normalize.get() else "%"
+        unit = "%"
         for name, (value_lbl, detail_lbl, _var) in self._legend_rows.items():
             sample = samples.get(name)
             current, average, peak = self.chart.stats(name)
@@ -387,6 +389,7 @@ class MonitorApp:
         self.chart.clear()
         self.sampler.reset()
         self._apply_y_mode(self.settings["y_mode"])
+        self.chart.redraw()
         self._update_status()
 
     def on_topmost_changed(self):

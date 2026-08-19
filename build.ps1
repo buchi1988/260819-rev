@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     プロセス CPU モニターを単一 exe (dist\ProcCpuMonitor.exe) にビルドします。
 
