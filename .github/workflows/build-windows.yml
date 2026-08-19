@@ -1,0 +1,42 @@
+name: Windows exe をビルド
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存パッケージのインストール
+        run: python -m pip install --upgrade pip pyinstaller pytest
+
+      - name: テスト（GUI スモークテストを含む）
+        run: python -m pytest tests -q
+
+      - name: 通常版 exe をビルド
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -SkipInstall
+
+      - name: 管理者権限版 exe をビルド
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Admin -SkipInstall
+
+      - name: 起動確認（3 秒で自動終了）
+        run: |
+          $p = Start-Process -FilePath "dist\ProcCpuMonitor.exe" -PassThru
+          Start-Sleep -Seconds 8
+          if ($p.HasExited) { throw "exe が起動直後に終了しました (ExitCode=$($p.ExitCode))" }
+          Stop-Process -Id $p.Id -Force
+          Write-Host "起動確認 OK"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ProcCpuMonitor-exe
+          path: dist/*.exe
+          if-no-files-found: error
